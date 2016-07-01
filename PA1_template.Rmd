@@ -10,6 +10,28 @@ output:
 ```{r Processing}
 unzip(zipfile="activity.zip")
 dataset <- read.csv("activity.csv")
+dataset_clean <- read.csv("activity.csv")
+
+dataset_clean$date <- as.POSIXct(dataset_clean$date, format="%Y-%m-%d")
+
+# Compute the weekdays from the date attribute
+dataset_clean <- data.frame(date=dataset_clean$date, 
+                           weekday=tolower(weekdays(dataset_clean$date)), 
+                           steps=dataset_clean$steps, 
+                           interval=dataset_clean$interval)
+
+# Compute the day type (weekend or weekday)
+dataset_clean <- cbind(dataset_clean, 
+                      daytype=ifelse(dataset_clean$weekday == "saturday" | 
+                                     dataset_clean$weekday == "sunday", "weekend", 
+                                     "weekday"))
+
+# Create the final data.frame
+dataset_clean <- data.frame(date=dataset_clean$date, 
+                       weekday=dataset_clean$weekday, 
+                       daytype=dataset_clean$daytype, 
+                       interval=dataset_clean$interval,
+                       steps=dataset_clean$steps)
 ```
 
 
@@ -73,33 +95,26 @@ ggplot(fill_StepsPerDay, aes(x = steps)) +
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r}
-weekdays_steps <- function(data) {
-    weekdays_steps <- aggregate(data$steps, by=list(interval = data$interval),
-                          FUN=mean, na.rm=T)
-    # convert to integers for plotting
-    weekdays_steps$interval <- 
-            as.integer(levels(weekdays_steps$interval)[weekdays_steps$interval])
-    colnames(weekdays_steps) <- c("interval", "steps")
-    weekdays_steps
-}
 
-data_by_weekdays <- function(data) {
-    data$weekday <- 
-            as.factor(weekdays(data$date)) # weekdays
-    weekend_data <- subset(data, weekday %in% c("Saturday","Sunday"))
-    weekday_data <- subset(data, !weekday %in% c("Saturday","Sunday"))
+Activity <- data.frame(date=StepsPerDay$date, 
+                       weekday=StepsPerDay$weekday, 
+                       daytype=StepsPerDay$daytype, 
+                       interval=StepsPerDay$interval,
+                       steps=StepsPerDay$steps)
 
-    weekend_steps <- weekdays_steps(weekend_data)
-    weekday_steps <- weekdays_steps(weekday_data)
+library(lattice)
 
-    weekend_steps$dayofweek <- rep("weekend", nrow(weekend_steps))
-    weekday_steps$dayofweek <- rep("weekday", nrow(weekday_steps))
+# Compute the average number of steps taken, averaged across all daytype variable
+mean_data <- aggregate(dataset_clean$steps, 
+                       by=list(dataset_clean$daytype, 
+                               dataset_clean$weekday, dataset_clean$interval), mean, na.rm = TRUE)
 
-    data_by_weekdays <- rbind(weekend_steps, weekday_steps)
-    data_by_weekdays$dayofweek <- as.factor(data_by_weekdays$dayofweek)
-    data_by_weekdays
-}
+names(mean_data) <- c("daytype", "weekday", "interval", "mean")
 
-data_weekdays <- data_by_weekdays(rdata_fill)
+xyplot(mean ~ interval | daytype, mean_data, 
+       type="l", 
+       lwd=1, 
+       xlab="Interval", 
+       ylab="Number of steps", 
+       layout=c(1,2))
 ```
-
