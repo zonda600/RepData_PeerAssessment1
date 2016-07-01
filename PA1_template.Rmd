@@ -7,12 +7,15 @@ output:
 
 
 ## Loading and preprocessing the data
-
-
+```{r Processing}
+unzip(zipfile="activity.zip")
+dataset <- read.csv("activity.csv")
+```
 
 ## What is mean total number of steps taken per day?
+```{r}
 
-
+```
 
 ## What is the average daily activity pattern?
 
