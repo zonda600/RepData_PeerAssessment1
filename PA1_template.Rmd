@@ -2,10 +2,11 @@
 # "Reproducible Research: Peer Assessment 1"
 ---
 
-
 ## Loading and preprocessing the data
 ```{r Processing}
-unzip(zipfile="activity.zip")
+library(lattice)
+library(ggplot2)
+
 dataset <- read.csv("activity.csv")
 dataset_clean <- read.csv("activity.csv")
 
@@ -23,7 +24,7 @@ dataset_clean <- cbind(dataset_clean,
                                      dataset_clean$weekday == "sunday", "weekend", 
                                      "weekday"))
 
-# Create the final data.frame
+# Create the final data frame
 dataset_clean <- data.frame(date=dataset_clean$date, 
                        weekday=dataset_clean$weekday, 
                        daytype=dataset_clean$daytype, 
@@ -36,7 +37,6 @@ dataset_clean <- data.frame(date=dataset_clean$date,
 ```{r}
 StepsPerDay <- aggregate(steps ~ date, dataset, sum)
 colnames(StepsPerDay) <- c("date","steps")
-head(StepsPerDay)
 
 ggplot(StepsPerDay, aes(x = steps)) + 
       geom_histogram(fill = "Blue", binwidth = 1000) + 
@@ -48,7 +48,7 @@ Median_Steps <- median(StepsPerDay$steps, na.rm=TRUE)
 ```
 
 ## What is the average daily activity pattern?
-```{r}
+```{r AvgDaily}
 DailyActivity <- aggregate(dataset$steps, by = list(interval = dataset$interval),
                   FUN=mean, na.rm=TRUE)
 
@@ -62,7 +62,7 @@ ggplot(DailyActivity, aes(x=interval, y=steps)) +
 ```
 
 ## Imputing missing values
-```{r}
+```{r AvgDailyActivity}
 na_fill <- function(data, pervalue) {
         na_index <- which(is.na(data$steps))
         na_replace <- unlist(lapply(na_index, FUN=function(idx){
@@ -91,15 +91,12 @@ ggplot(fill_StepsPerDay, aes(x = steps)) +
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
-```{r}
-
+```{r StepsPerDay}
 Activity <- data.frame(date=StepsPerDay$date, 
                        weekday=StepsPerDay$weekday, 
                        daytype=StepsPerDay$daytype, 
                        interval=StepsPerDay$interval,
                        steps=StepsPerDay$steps)
-
-library(lattice)
 
 # Compute the average number of steps taken, averaged across all daytype variable
 mean_data <- aggregate(dataset_clean$steps, 
